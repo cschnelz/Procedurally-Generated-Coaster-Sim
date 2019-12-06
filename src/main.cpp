@@ -845,26 +845,40 @@ public:
 	}
 
 	glm::mat4 tracePath(int steps_per_position) {
-		// index along the overall position buffer
+		// index along the overall position vector
 		static int position_location = 0;
-		// stepper for making smaller steps between each index in the position buffer
+		// stepper for making smaller steps between each index in the position vector
 		static int position_step = 0;
 
+		// calculate position x and z values from position vector
 		glm::vec3 curr_pos = positions[position_location];
 		glm::vec3 next_pos = positions[(position_location + 1) % positions.size()];
 
-
 		glm::vec3 diff = next_pos - curr_pos;
+		glm::vec3 step_size = diff / (float)steps_per_position;
+		glm::vec3 step_location = curr_pos + (step_size * (float)position_step);
 
+		// calculate position y value from heightmap
+		double curr_height = heightmap[position_location];
+		double next_height = heightmap[(position_location + 1) % positions.size()];
+
+		double height_diff = next_height - curr_height;
+		double height_size = height_diff / (double)steps_per_position;
+		double height_loc = curr_height + (height_size * (double)position_step);
 
 
 		position_step = (position_step + 1) % steps_per_position; // increment intra position stepper
 		if (position_step == 0) {
 			position_location = (position_location + 1) % positions.size(); // move to next position index
+			step_location = next_pos;
+			height_loc = next_height;
 		}
 
-		return glm::translate(glm::mat4(1.0f), glm::vec3(positions[(int)(glfwGetTime() * 5) % (positions.size() - 1)].x,
-			heightmap[(int)(glfwGetTime() * 5) % (positions.size() - 1)] + 3.5, positions[(int)(glfwGetTime() * 5) % (positions.size() - 1)].y));
+		//return glm::translate(glm::mat4(1.0f), glm::vec3(
+		//	positions[(int)(glfwGetTime() * 5) % (positions.size() - 1)].x,
+		//	heightmap[(int)(glfwGetTime() * 5) % (positions.size() - 1)] + 3.5, 
+		//	positions[(int)(glfwGetTime() * 5) % (positions.size() - 1)].y));
+		return glm::translate(glm::mat4(1.0f), glm::vec3(step_location.x, height_loc, step_location.y));
 	}
 
 
@@ -938,8 +952,9 @@ public:
 
 		// draw the cart in positions of coaster moving with time
 		glm::mat4 transCart = tracePath(10);
+		moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3.5, 0));
 		glm::mat4 scaleCart = glm::scale(glm::mat4(1.0f), glm::vec3(.8, .8, .8));
-		M = transCart * scaleCart;
+		M = transCart * moveUp * scaleCart;
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, (void*)0);
 
