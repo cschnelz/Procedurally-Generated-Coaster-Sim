@@ -37,7 +37,7 @@ public:
 		w = a = s = d = up = down = bird = 0;
 		pos = rot = glm::vec3(0, 0, 0);
 	}
-	glm::mat4 process(double ftime, std::vector<glm::ivec3> positions, std::vector<float> rotations, std::vector<int> directions, 
+	glm::mat4 process(double ftime, std::vector<glm::vec3> positions, std::vector<float> rotations, std::vector<int> directions, 
 		std::vector<double> heightmap, std::vector<float> slopes, std::vector<glm::vec3> dirs) {
 		float speed = 0;
 		float flight = 0;
@@ -525,13 +525,13 @@ public:
 	//
 	//
 
-	std::vector<glm::ivec3> positions;
+	std::vector<glm::vec3> positions;
 	std::vector<float> rotations;
 	std::vector<int> directions;
 	float quarter = pi<float>() / 2;
 
-	void autocomplete_perpendicular(int starting_dir, int current_dir, ivec3 end_coords, ivec3 starting_coords) {
-		ivec3 temp = end_coords;
+	void autocomplete_perpendicular(int starting_dir, int current_dir, vec3 end_coords, vec3 starting_coords) {
+		vec3 temp = end_coords;
 		if (starting_dir == 0 || starting_dir == 2) {
 			if (abs(end_coords.y - starting_coords.y) > 1) {
 				positions.erase(positions.end() - 1);
@@ -584,10 +584,10 @@ public:
 		}
 	}
 
-	void autocomplete_parallel(int starting_dir, int current_dir, ivec3 end_coords, ivec3 starting_coords) {
-		ivec3 intermediate = ivec3(0);
+	void autocomplete_parallel(int starting_dir, int current_dir, vec3 end_coords, vec3 starting_coords) {
+		vec3 intermediate = vec3(0);
 		int padding_dir = 0;
-		ivec3 temp = ivec3(0);
+		vec3 temp = vec3(0);
 		if (starting_dir == 0 || starting_dir == 2) {
 			intermediate.x = (end_coords.x > 0) ? 2 : -2;
 			padding_dir = (end_coords.x > 0) ? 1 : 3;
@@ -624,8 +624,8 @@ public:
 		}
 	}
 	
-	void autocomplete(int starting_dir, int current_dir, glm::ivec3 end_coords) {
-		glm::ivec3 starting_coords = positions[0];
+	void autocomplete(int starting_dir, int current_dir, glm::vec3 end_coords) {
+		glm::vec3 starting_coords = positions[0];
 		int angle = abs(current_dir - starting_dir);
 		if (angle == 0 || angle == 2) {
 			autocomplete_parallel(starting_dir, current_dir, end_coords, starting_coords);
@@ -636,7 +636,7 @@ public:
 	}
 
 
-	glm::ivec3 near_border(glm::ivec3 coords, int dimensions, int *dir, int *straight) {
+	glm::vec3 near_border(glm::vec3 coords, int dimensions, int *dir, int *straight) {
 		if ((*dir == 0 || *dir == 2) && dimensions - abs(coords.y) < 3) {
 			return generate_turn(coords, dir, dimensions, straight);
 		}
@@ -646,7 +646,7 @@ public:
 		return coords;
 	}
 
-	ivec3 shift_coords(ivec3 coords, int dir) {
+	vec3 shift_coords(vec3 coords, int dir) {
 		if (dir == 0) {
 			coords.y += 1;
 		}
@@ -662,7 +662,7 @@ public:
 		return coords;
 	}
 
-	ivec3 generate_turn(ivec3 coords, int *dir, int dimensions, int *straight) {
+	vec3 generate_turn(vec3 coords, int *dir, int dimensions, int *straight) {
 		int turn_length = floor(sqrt(dimensions));
 		
 		//int turn_dir = rand() % 2; // 0 or 1
@@ -712,7 +712,7 @@ public:
 		return coords;
 	}
 
-	glm::ivec3 generate_straightaway(ivec3 coords, int min_segment_length, int dimensions, int* dir, int* straight) {
+	glm::vec3 generate_straightaway(vec3 coords, int min_segment_length, int dimensions, int* dir, int* straight) {
 		for (int i = 0; i < min_segment_length; i++) {
 			coords = shift_coords(coords, *dir);
 			positions.push_back(coords);
@@ -727,7 +727,7 @@ public:
 	// straightrate = 0 - 100 odds of just continuing current dir
 	// The code to create the path is a modified and bounded variant of the "drunken walk" algorithm that also includes an autocomplete feature to ensure complete loops
 	void createPath(int length, int straight_rate, int straight_deterioration, int border_size, int min_segment_length) {
-		ivec3 coords = ivec3(0);
+		vec3 coords = vec3(0);
 		positions.push_back(coords);
 		// starting direction
 		int dir = rand() % 4; // 0 = N; 1 = E; 2 = S; 3 = W;
@@ -844,6 +844,29 @@ public:
 		printf("height: %i\n", heightmap.size());
 	}
 
+	glm::mat4 tracePath(int steps_per_position) {
+		// index along the overall position buffer
+		static int position_location = 0;
+		// stepper for making smaller steps between each index in the position buffer
+		static int position_step = 0;
+
+		glm::vec3 curr_pos = positions[position_location];
+		glm::vec3 next_pos = positions[(position_location + 1) % positions.size()];
+
+
+		glm::vec3 diff = next_pos - curr_pos;
+
+
+
+		position_step = (position_step + 1) % steps_per_position; // increment intra position stepper
+		if (position_step == 0) {
+			position_location = (position_location + 1) % positions.size(); // move to next position index
+		}
+
+		return glm::translate(glm::mat4(1.0f), glm::vec3(positions[(int)(glfwGetTime() * 5) % (positions.size() - 1)].x,
+			heightmap[(int)(glfwGetTime() * 5) % (positions.size() - 1)] + 3.5, positions[(int)(glfwGetTime() * 5) % (positions.size() - 1)].y));
+	}
+
 
 	/****DRAW
 	This is the most important function in your program - this is where you
@@ -909,12 +932,12 @@ public:
 			glUniform1f(prog->getUniform("color_change"), (1.f / positions.size()) * i);
 			glDrawElements(GL_TRIANGLES, CIRC_SAMP_RATE * cylinderLength * 3, GL_UNSIGNED_SHORT, (void*)0);
 		}
-
+		
 		// lets draw a coaster train shall we
 		glBindVertexArray(CubeArrayID);
+
 		// draw the cart in positions of coaster moving with time
-		glm::mat4 transCart = glm::translate(glm::mat4(1.0f), glm::vec3(positions[(int)(glfwGetTime() * 5) % (positions.size() - 1)].x, 
-			heightmap[(int)(glfwGetTime() * 5) % (positions.size() - 1)] + 3.5, positions[(int)(glfwGetTime() * 5) % (positions.size() - 1)].y));
+		glm::mat4 transCart = tracePath(10);
 		glm::mat4 scaleCart = glm::scale(glm::mat4(1.0f), glm::vec3(.8, .8, .8));
 		M = transCart * scaleCart;
 		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
