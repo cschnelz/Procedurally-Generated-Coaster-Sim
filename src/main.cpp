@@ -750,32 +750,27 @@ public:
 		printf("height: %i\n", heightmap.size());
 	}
 
-	glm::vec3 tracePath(int steps_per_position) {
-		// index along the overall position vector
-		static int position_location = 0;
-		// stepper for making smaller steps between each index in the position vector
-		static int position_step = 0;
-
+	glm::vec3 tracePath(static int* position_location, static int* position_step, int steps_per_position) {
 		// calculate position x and z values from position vector
-		glm::vec3 curr_pos = positions[position_location];
-		glm::vec3 next_pos = positions[(position_location + 1) % positions.size()];
+		glm::vec3 curr_pos = positions[*position_location];
+		glm::vec3 next_pos = positions[(*position_location + 1) % positions.size()];
 
 		glm::vec3 diff = next_pos - curr_pos;
 		glm::vec3 step_size = diff / (float)steps_per_position;
-		glm::vec3 step_location = curr_pos + (step_size * (float)position_step);
+		glm::vec3 step_location = curr_pos + (step_size * (float)*position_step);
 
 		// calculate position y value from heightmap
-		double curr_height = heightmap[position_location];
-		double next_height = heightmap[(position_location + 1) % positions.size()];
+		double curr_height = heightmap[*position_location];
+		double next_height = heightmap[(*position_location + 1) % positions.size()];
 
 		double height_diff = next_height - curr_height;
 		double height_size = height_diff / (double)steps_per_position;
-		double height_loc = curr_height + (height_size * (double)position_step);
+		double height_loc = curr_height + (height_size * (double)*position_step);
 
 
-		position_step = (position_step + 1) % steps_per_position; // increment intra position stepper
-		if (position_step == 0) {
-			position_location = (position_location + 1) % positions.size(); // move to next position index
+		*position_step = (*position_step + 1) % steps_per_position; // increment intra position stepper
+		if (*position_step == 0) {
+			*position_location = (*position_location + 1) % positions.size(); // move to next position index
 			step_location = next_pos;
 			height_loc = next_height;
 		}
@@ -825,7 +820,10 @@ public:
 		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.8f, 0.8f, 0.8f));
 
 		M =  TransZ * S;
-		glm::vec3 cam_tracer = tracePath(10);
+		static int head_pos = 2;
+		static int step_rate = 10;
+		static int position_step = 0;
+		glm::vec3 cam_tracer = tracePath(&head_pos, &position_step, step_rate);
 		glm::vec3 cart_tracer = glm::vec3(cam_tracer.x, cam_tracer.y,cam_tracer.z);
 		cam_tracer.y += 5.5;
 		V = mycam.process(frametime, -cam_tracer);
@@ -872,13 +870,32 @@ public:
 			glm::vec3(0,0,0)
 		};
 
-		cart_positions[2] = cart_positions[1];
-		cart_positions[1] = cart_positions[0];
+		static int train1 = 1;
+		static int train1_step = 0;
+		static int train2 = 0;
+		static int train2_step = 0;
 		cart_positions[0] = cart_tracer;
+		cart_positions[1] = tracePath(&train1, &train1_step, step_rate);
+		cart_positions[2] = tracePath(&train2, &train2_step, step_rate);
+
+		printf("0: %f, %f, %f\n", cart_positions[0].x, cart_positions[0].y, cart_positions[0].z);
+		printf("1: %f, %f, %f\n", cart_positions[1].x, cart_positions[1].y, cart_positions[1].z);
+		printf("2: %f, %f, %f\n", cart_positions[2].x, cart_positions[2].y, cart_positions[2].z);
+		printf("\n\n");
 
 		glm::mat4 transCart = glm::translate(glm::mat4(1.0f), cart_positions[0]);
 		moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3.5, 0));
 		S = glm::scale(glm::mat4(1), glm::vec3(.4, .4, .4));
+		M = transCart * moveUp * S;
+		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glDrawArrays(GL_TRIANGLES, 0, posSize);
+		
+		transCart = glm::translate(glm::mat4(1.0f), cart_positions[1]);
+		M = transCart * moveUp * S;
+		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glDrawArrays(GL_TRIANGLES, 0, posSize);
+		
+		transCart = glm::translate(glm::mat4(1.0f), cart_positions[2]);
 		M = transCart * moveUp * S;
 		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glDrawArrays(GL_TRIANGLES, 0, posSize);
