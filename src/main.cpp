@@ -50,7 +50,7 @@ public:
 
 	// cubes
 	GLuint CubeArrayID;
-	GLuint CubeBufferID, CubeNorID, CubeIndexID;
+	GLuint CubeBufferID, CubeNorID, CubeTexID;
 
 	// Data necessary to give our box to OpenGL
 	GLuint MeshPosID, MeshTexID, IndexBufferIDBox;
@@ -286,22 +286,21 @@ public:
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-		printf("pos size: %i\n", pos.size());
-		printf("n size: %i\n", n.size());
+		glGenBuffers(1, &CubeTexID);
+		glBindBuffer(GL_ARRAY_BUFFER, CubeTexID);
 
-		// Set up instance rendering
-		//glm::mat4 moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3, 0));
-		//glm::mat4 scaleRail = glm::scale(glm::mat4(1.0f), glm::vec3(.75, .2, 1));
-		//
-		//for (int i = 0; i < positions.size(); i++) {
-		//	glm::mat4 transRail = glm::translate(glm::mat4(1.0f), glm::vec3(positions[i].x, heightmap[i], positions[i].y));
-		//	glm::mat4 rotateRail = glm::rotate(glm::mat4(1.0f), rotations[i], glm::vec3(0.0, 1.0, 0.0));
-		//	glm::mat4 slopeRail = glm::rotate(glm::mat4(1.0f), slopes[i], dirs[i]);
-		//	glm::mat4 M = moveUp * transRail * slopeRail * rotateRail * scaleRail;
-		//	glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		//	glUniform3f(trackProg->getUniform("color_change"), (1.f / positions.size()) * i + .25, (1.f / positions.size()) * i + .1, (1.f / positions.size()) * i + .1);
-		//	glDrawArrays(GL_TRIANGLES, 0, posSize);
-		//}
+		std::vector<glm::vec2> t;
+		t.push_back(glm::vec2(0, 0));
+		t.push_back(glm::vec2(1, 0));
+		t.push_back(glm::vec2(1, 1));
+
+		t.push_back(glm::vec2(0,0));
+		t.push_back(glm::vec2(1,1));
+		t.push_back(glm::vec2(0,1));
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2)* t.size(), t.data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 		glBindVertexArray(0);
 
@@ -327,11 +326,11 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		//texture 2
-		str = resourceDirectory + "/sky.jpg";
+		str = resourceDirectory + "/track.jpg";
 		strcpy(filepath, str.c_str());
 		data = stbi_load(filepath, &width, &height, &channels, 4);
 		glGenTextures(1, &Texture2);
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, Texture2);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -345,7 +344,7 @@ public:
 		strcpy(filepath, str.c_str());
 		data = stbi_load(filepath, &width, &height, &channels, 4);
 		glGenTextures(1, &HeightTex);
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, HeightTex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -371,6 +370,9 @@ public:
 		glUniform1i(Tex1Location, 0);
 		glUniform1i(Tex2Location, 1);
 
+		GLuint TracktexLocation = glGetUniformLocation(trackProg->pid, "tex");
+		glUseProgram(trackProg->pid);
+		glUniform1i(TracktexLocation, 3);
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -415,6 +417,7 @@ public:
 		trackProg->addUniform("color_change");
 		trackProg->addUniform("light_pos");
 		trackProg->addUniform("campos");
+		trackProg->addUniform("cart");
 		trackProg->addAttribute("vertPos");
 		trackProg->addAttribute("vertNor");		
 
@@ -503,7 +506,6 @@ public:
 	}
 
 	void autocomplete_parallel(int starting_dir, int current_dir, vec3 end_coords, vec3 starting_coords) {
-		printf("PARRALEL\n");
 		vec3 intermediate = vec3(0);
 		int padding_dir = 0;
 		vec3 temp = vec3(0);
@@ -697,8 +699,6 @@ public:
 		positions.erase(positions.begin());
 		rotations.erase(rotations.begin());
 		directions.erase(directions.begin());
-
-		printf("diff in vectors: %i\n", positions.size() - directions.size());
 	}
 
 	std::vector<double> heightmap;
@@ -738,8 +738,6 @@ public:
 		curr_height = heightmap[heightmap.size() - 1];
 		next_height = heightmap[0];
 		slopes.push_back(glm::atan(next_height - curr_height));
-
-		printf("diff in vecs 2: %i\n", positions.size() - slopes.size());
 	}
 
 	void vectorizeDirections() {
@@ -763,32 +761,27 @@ public:
 		printf("height: %i\n", heightmap.size());
 	}
 
-	glm::vec3 tracePath(int steps_per_position) {
-		// index along the overall position vector
-		static int position_location = 0;
-		// stepper for making smaller steps between each index in the position vector
-		static int position_step = 0;
-
+	glm::vec3 tracePath(static int* position_location, static int* position_step, int steps_per_position) {
 		// calculate position x and z values from position vector
-		glm::vec3 curr_pos = positions[position_location];
-		glm::vec3 next_pos = positions[(position_location + 1) % positions.size()];
+		glm::vec3 curr_pos = positions[*position_location];
+		glm::vec3 next_pos = positions[(*position_location + 1) % positions.size()];
 
 		glm::vec3 diff = next_pos - curr_pos;
 		glm::vec3 step_size = diff / (float)steps_per_position;
-		glm::vec3 step_location = curr_pos + (step_size * (float)position_step);
+		glm::vec3 step_location = curr_pos + (step_size * (float)*position_step);
 
 		// calculate position y value from heightmap
-		double curr_height = heightmap[position_location];
-		double next_height = heightmap[(position_location + 1) % positions.size()];
+		double curr_height = heightmap[*position_location];
+		double next_height = heightmap[(*position_location + 1) % positions.size()];
 
 		double height_diff = next_height - curr_height;
 		double height_size = height_diff / (double)steps_per_position;
-		double height_loc = curr_height + (height_size * (double)position_step);
+		double height_loc = curr_height + (height_size * (double)*position_step);
 
 
-		position_step = (position_step + 1) % steps_per_position; // increment intra position stepper
-		if (position_step == 0) {
-			position_location = (position_location + 1) % positions.size(); // move to next position index
+		*position_step = (*position_step + 1) % steps_per_position; // increment intra position stepper
+		if (*position_step == 0) {
+			*position_location = (*position_location + 1) % positions.size(); // move to next position index
 			step_location = next_pos;
 			height_loc = next_height;
 		}
@@ -838,7 +831,10 @@ public:
 		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.8f, 0.8f, 0.8f));
 
 		M =  TransZ * S;
-		glm::vec3 cam_tracer = tracePath(10);
+		static int head_pos = 2;
+		static int step_rate = 10;
+		static int position_step = 0;
+		glm::vec3 cam_tracer = tracePath(&head_pos, &position_step, step_rate);
 		glm::vec3 cart_tracer = glm::vec3(cam_tracer.x, cam_tracer.y,cam_tracer.z);
 		cam_tracer.y += 5.5;
 		V = mycam.process(frametime, -cam_tracer);
@@ -866,6 +862,7 @@ public:
 
 		glm::mat4 moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3, 0));
 		glm::mat4 scaleRail = glm::scale(glm::mat4(1.0f), glm::vec3(.75, .2, 1));
+		glUniform1i(trackProg->getUniform("cart"), 0);
 
 		// draw the coaster components
 		for (int i = 0; i < positions.size(); i++) {
@@ -877,22 +874,46 @@ public:
 			glUniform3f(trackProg->getUniform("color_change"), (1.f / positions.size()) * i + .25, (1.f / positions.size()) * i +.1, (1.f / positions.size())* i + .1);
 			glDrawArrays(GL_TRIANGLES, 0, posSize);
 		}
-
+		// lets draw a coaster train shall we
+		glBindVertexArray(CubeArrayID);
+		glUniform1i(trackProg->getUniform("cart"), 1);
 		// draw the cart in positions of coaster moving with time
 		glUniform3f(trackProg->getUniform("color_change"), .8f, .4f, .3f); // cart color
 		static glm::vec3 cart_positions[] = {
 			glm::vec3(0,0,0),
 			glm::vec3(0,0,0),
 			glm::vec3(0,0,0)
+
+
+
 		};
 
-		cart_positions[2] = cart_positions[1];
-		cart_positions[1] = cart_positions[0];
+		static int train1 = 1;
+		static int train1_step = 0;
+		static int train2 = 0;
+		static int train2_step = 0;
 		cart_positions[0] = cart_tracer;
+		cart_positions[1] = tracePath(&train1, &train1_step, step_rate);
+		cart_positions[2] = tracePath(&train2, &train2_step, step_rate);
+
+		printf("0: %f, %f, %f\n", cart_positions[0].x, cart_positions[0].y, cart_positions[0].z);
+		printf("1: %f, %f, %f\n", cart_positions[1].x, cart_positions[1].y, cart_positions[1].z);
+		printf("2: %f, %f, %f\n", cart_positions[2].x, cart_positions[2].y, cart_positions[2].z);
+		printf("\n\n");
 
 		glm::mat4 transCart = glm::translate(glm::mat4(1.0f), cart_positions[0]);
 		moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3.5, 0));
 		S = glm::scale(glm::mat4(1), glm::vec3(.4, .4, .4));
+		M = transCart * moveUp * S;
+		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glDrawArrays(GL_TRIANGLES, 0, posSize);
+		
+		transCart = glm::translate(glm::mat4(1.0f), cart_positions[1]);
+		M = transCart * moveUp * S;
+		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glDrawArrays(GL_TRIANGLES, 0, posSize);
+		
+		transCart = glm::translate(glm::mat4(1.0f), cart_positions[2]);
 		M = transCart * moveUp * S;
 		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glDrawArrays(GL_TRIANGLES, 0, posSize);
@@ -941,7 +962,8 @@ int main(int argc, char **argv) {
 	application->windowManager = windowManager;
 
 	srand(time(0));
-	//srand(56534532);
+	srand(56534532);
+	//srand(98787815);
 
 	// track length, straight rate, straight deterioration, border size, min_segment_length
 	application->createPath(100, 80, 10, 40, 2);
