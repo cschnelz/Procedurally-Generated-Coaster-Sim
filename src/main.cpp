@@ -13,6 +13,7 @@
 #include <algorithm>
 
 #include "PerlinNoise.h"
+#include "Camera.h"
 
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
@@ -29,56 +30,8 @@ double get_last_elapsed_time() {
 	lasttime = actualtime;
 	return difference;
 }
-class camera {
-public:
-	glm::vec3 pos, rot;
-	int w, a, s, d, up, down, bird;
-	camera() {
-		w = a = s = d = up = down = bird = 0;
-		pos = rot = glm::vec3(0, 0, 0);
-	}
-	glm::mat4 process(double ftime, std::vector<glm::vec3> positions, std::vector<float> rotations, std::vector<int> directions, 
-		std::vector<double> heightmap, std::vector<float> slopes, std::vector<glm::vec3> dirs) {
-		float speed = 0;
-		float flight = 0;
-		if (up == 1) {
-			flight = 10 * ftime;
-		}
-		else if (down == 1) {
-			flight = -10 * ftime;
-		}
-		if (w == 1) {
-			speed = 10*ftime;
-		}
-		else if (s == 1) {
-			speed = -10*ftime;
-		}
-		float yangle=0;
-		if (a == 1)
-			yangle = -3*ftime;
-		else if(d==1)
-			yangle = 3*ftime;
 
-		rot.y += yangle;
-		glm::mat4 R;
-		
-		if (bird == 1) {
-			R = glm::rotate(glm::mat4(1), 3.1515926535f / 4.f, glm::vec3(1, 0, 0));
-		}
-		else {
-			R = glm::rotate(glm::mat4(1), rot.y, glm::vec3(0, 1, 0));
-			R *= glm::rotate(glm::mat4(1), 0.f, glm::vec3(1, 0, 0));
-		}
-		glm::vec4 dir = glm::vec4(0, -flight, speed,1);
-		dir = dir*R;
-		pos += glm::vec3(dir.x, dir.y, dir.z);
-		glm::mat4 T = glm::translate(glm::mat4(1), pos);
-		return R*T;
-	}
-};
-// PRESS G TO GO BIRDS EYE VIEW
-
-camera mycam;
+Camera mycam;
 
 class Application : public EventCallbacks {
 
@@ -113,12 +66,12 @@ public:
 	int CIRC_SAMP_RATE = 80;
 	int cylinderLength = 4;
 
-	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) { glfwSetWindowShouldClose(window, GL_TRUE);}
+	void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) { glfwSetWindowShouldClose(window, GL_TRUE); }
 		if (key == GLFW_KEY_W && action == GLFW_PRESS) { mycam.w = 1; }
 		if (key == GLFW_KEY_W && action == GLFW_RELEASE) { mycam.w = 0; }
 		if (key == GLFW_KEY_S && action == GLFW_PRESS) { mycam.s = 1; }
-		if (key == GLFW_KEY_S && action == GLFW_RELEASE) { mycam.s = 0;}
+		if (key == GLFW_KEY_S && action == GLFW_RELEASE) { mycam.s = 0; }
 		if (key == GLFW_KEY_A && action == GLFW_PRESS) { mycam.a = 1; }
 		if (key == GLFW_KEY_A && action == GLFW_RELEASE) { mycam.a = 0; }
 		if (key == GLFW_KEY_D && action == GLFW_PRESS) { mycam.d = 1; }
@@ -126,13 +79,10 @@ public:
 		if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) { mycam.up = 1; }
 		if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE) { mycam.up = 0; }
 		if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) { mycam.down = 1; }
-		if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE) {	mycam.down = 0; }
+		if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE) { mycam.down = 0; }
 		if (key == GLFW_KEY_G && action == GLFW_PRESS) { mycam.bird = 1; }
 		if (key == GLFW_KEY_H && action == GLFW_PRESS) { mycam.bird = 0; }
 	}
-
-	// PRESS G TO GO BIRDS EYE VIEW
-
 
 	// callback for the mouse when clicked move the triangle when helper functions
 	// written
