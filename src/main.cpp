@@ -50,7 +50,7 @@ public:
 
 	// cubes
 	GLuint CubeArrayID;
-	GLuint CubeBufferID, CubeNorID, CubeIndexID;
+	GLuint CubeBufferID, CubeNorID, CubeTexID;
 
 	// cylinder
 	GLuint CylinderArrayID;
@@ -289,8 +289,22 @@ public:
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-		printf("pos size: %i\n", pos.size());
-		printf("n size: %i\n", n.size());
+		glGenBuffers(1, &CubeTexID);
+		glBindBuffer(GL_ARRAY_BUFFER, CubeTexID);
+
+		std::vector<glm::vec2> t;
+		t.push_back(glm::vec2(0, 0));
+		t.push_back(glm::vec2(1, 0));
+		t.push_back(glm::vec2(1, 1));
+
+		t.push_back(glm::vec2(0,0));
+		t.push_back(glm::vec2(1,1));
+		t.push_back(glm::vec2(0,1));
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2)* t.size(), t.data(), GL_STATIC_DRAW);
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+
 		glBindVertexArray(0);
 
 		//initialize the net mesh
@@ -314,11 +328,11 @@ public:
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		//texture 2
-		str = resourceDirectory + "/sky.jpg";
+		str = resourceDirectory + "/track.jpg";
 		strcpy(filepath, str.c_str());
 		data = stbi_load(filepath, &width, &height, &channels, 4);
 		glGenTextures(1, &Texture2);
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, Texture2);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -332,7 +346,7 @@ public:
 		strcpy(filepath, str.c_str());
 		data = stbi_load(filepath, &width, &height, &channels, 4);
 		glGenTextures(1, &HeightTex);
-		glActiveTexture(GL_TEXTURE1);
+		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, HeightTex);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -358,6 +372,9 @@ public:
 		glUniform1i(Tex1Location, 0);
 		glUniform1i(Tex2Location, 1);
 
+		GLuint TracktexLocation = glGetUniformLocation(trackProg->pid, "tex");
+		glUseProgram(trackProg->pid);
+		glUniform1i(TracktexLocation, 3);
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -402,6 +419,7 @@ public:
 		trackProg->addUniform("color_change");
 		trackProg->addUniform("light_pos");
 		trackProg->addUniform("campos");
+		trackProg->addUniform("cart");
 		trackProg->addAttribute("vertPos");
 		trackProg->addAttribute("vertNor");		
 
@@ -848,6 +866,7 @@ public:
 
 		glm::mat4 moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3, 0));
 		glm::mat4 scaleRail = glm::scale(glm::mat4(1.0f), glm::vec3(.75, .2, 1));
+		glUniform1i(trackProg->getUniform("cart"), 0);
 
 		// draw the coaster components
 		for (int i = 0; i < positions.size(); i++) {
@@ -861,13 +880,16 @@ public:
 		}
 		// lets draw a coaster train shall we
 		glBindVertexArray(CubeArrayID);
-
+		glUniform1i(trackProg->getUniform("cart"), 1);
 		// draw the cart in positions of coaster moving with time
 		glUniform3f(trackProg->getUniform("color_change"), .8f, .4f, .3f); // cart color
 		static glm::vec3 cart_positions[] = {
 			glm::vec3(0,0,0),
 			glm::vec3(0,0,0),
 			glm::vec3(0,0,0)
+
+
+
 		};
 
 		static int train1 = 1;
@@ -951,6 +973,7 @@ int main(int argc, char **argv) {
 
 	srand(time(0));
 	//srand(56534532);
+	//srand(98787815);
 
 	// track length, straight rate, straight deterioration, border size, min_segment_length
 	application->createPath(100, 80, 10, 40, 2);
