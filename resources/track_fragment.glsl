@@ -1,6 +1,6 @@
 #version 330 core
-out vec3 color;
-//in vec3 vertex_normal;
+out vec4 color;
+in vec3 vertex_normal;
 in vec3 vertex_pos;
 in vec2 vertex_tex;
 

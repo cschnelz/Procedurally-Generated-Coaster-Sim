@@ -50,7 +50,7 @@ public:
 
 	// cubes
 	GLuint CubeArrayID;
-	GLuint CubeBufferID, CubeNorID, CubeTexID;
+	GLuint CubeBufferID, CubeNorID, CubeTexID, CubeInstanceID;
 
 	// Data necessary to give our box to OpenGL
 	GLuint MeshPosID, MeshTexID, IndexBufferIDBox;
@@ -302,6 +302,34 @@ public:
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+		// Generate instance matrix buffer
+		glGenBuffers(1, &CubeInstanceID);
+		glBindBuffer(GL_ARRAY_BUFFER, CubeInstanceID);
+
+		std::vector<glm::mat4> models;
+
+		glm::mat4 moveUp, scaleRail, transRail, rotateRail, slopeRail;
+
+		moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3, 0));
+		scaleRail = glm::scale(glm::mat4(1.0f), glm::vec3(.75, .2, 1));
+		
+
+		for (int i = 0; i < positions.size(); i++) {
+			transRail = glm::translate(glm::mat4(1.0f), glm::vec3(positions[i].x, heightmap[i], positions[i].y));
+			rotateRail = glm::rotate(glm::mat4(1.0f), rotations[i], glm::vec3(0.0, 1.0, 0.0));
+			slopeRail = glm::rotate(glm::mat4(1.0f), slopes[i], dirs[i]);
+			glm::mat4 M = moveUp * transRail * slopeRail * rotateRail * scaleRail;
+			//glUniform3f(trackProg->getUniform("color_change"), (1.f / positions.size()) * i + .25, (1.f / positions.size()) * i + .1, (1.f / positions.size()) * i + .1);
+			//glDrawArrays(GL_TRIANGLES, 0, posSize);
+			models.push_back(M);
+		}
+
+		glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_DYNAMIC_DRAW);
+		int mat_loc = glGetAttribLocation(trackProg->pid, "InstanceMat");
+		for (int i = 0; i < models.size(); i++) {
+			// do instance stuff
+		}
+
 		glBindVertexArray(0);
 
 
@@ -420,6 +448,7 @@ public:
 		trackProg->addUniform("cart");
 		trackProg->addAttribute("vertPos");
 		trackProg->addAttribute("vertNor");		
+		trackProg->addAttribute("InstanceMat");
 
 		// Initialize the GLSL program.
 		heightshader = std::make_shared<Program>();
@@ -864,59 +893,59 @@ public:
 		glm::mat4 scaleRail = glm::scale(glm::mat4(1.0f), glm::vec3(.75, .2, 1));
 		glUniform1i(trackProg->getUniform("cart"), 0);
 
-		// draw the coaster components
-		for (int i = 0; i < positions.size(); i++) {
-			glm::mat4 transRail = glm::translate(glm::mat4(1.0f), glm::vec3(positions[i].x, heightmap[i], positions[i].y));
-			glm::mat4 rotateRail = glm::rotate(glm::mat4(1.0f), rotations[i], glm::vec3(0.0, 1.0, 0.0));
-			glm::mat4 slopeRail = glm::rotate(glm::mat4(1.0f), slopes[i], dirs[i]);
-			M = moveUp * transRail * slopeRail * rotateRail* scaleRail;
-			glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-			glUniform3f(trackProg->getUniform("color_change"), (1.f / positions.size()) * i + .25, (1.f / positions.size()) * i +.1, (1.f / positions.size())* i + .1);
-			glDrawArrays(GL_TRIANGLES, 0, posSize);
-		}
+		//// draw the coaster components
+		//for (int i = 0; i < positions.size(); i++) {
+		//	glm::mat4 transRail = glm::translate(glm::mat4(1.0f), glm::vec3(positions[i].x, heightmap[i], positions[i].y));
+		//	glm::mat4 rotateRail = glm::rotate(glm::mat4(1.0f), rotations[i], glm::vec3(0.0, 1.0, 0.0));
+		//	glm::mat4 slopeRail = glm::rotate(glm::mat4(1.0f), slopes[i], dirs[i]);
+		//	M = moveUp * transRail * slopeRail * rotateRail* scaleRail;
+		//	glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		//	glUniform3f(trackProg->getUniform("color_change"), (1.f / positions.size()) * i + .25, (1.f / positions.size()) * i +.1, (1.f / positions.size())* i + .1);
+		//	glDrawArrays(GL_TRIANGLES, 0, posSize);
+		//}
+
+
+
 		// lets draw a coaster train shall we
-		glBindVertexArray(CubeArrayID);
-		glUniform1i(trackProg->getUniform("cart"), 1);
-		// draw the cart in positions of coaster moving with time
-		glUniform3f(trackProg->getUniform("color_change"), .8f, .4f, .3f); // cart color
-		static glm::vec3 cart_positions[] = {
-			glm::vec3(0,0,0),
-			glm::vec3(0,0,0),
-			glm::vec3(0,0,0)
+		//glBindVertexArray(CubeArrayID);
+		//glUniform1i(trackProg->getUniform("cart"), 1);
+		//// draw the cart in positions of coaster moving with time
+		//glUniform3f(trackProg->getUniform("color_change"), .8f, .4f, .3f); // cart color
+		//static glm::vec3 cart_positions[] = {
+		//	glm::vec3(0,0,0),
+		//	glm::vec3(0,0,0),
+		//	glm::vec3(0,0,0)
+		//};
 
+		//static int train1 = 1;
+		//static int train1_step = 0;
+		//static int train2 = 0;
+		//static int train2_step = 0;
+		//cart_positions[0] = cart_tracer;
+		//cart_positions[1] = tracePath(&train1, &train1_step, step_rate);
+		//cart_positions[2] = tracePath(&train2, &train2_step, step_rate);
 
+		//printf("0: %f, %f, %f\n", cart_positions[0].x, cart_positions[0].y, cart_positions[0].z);
+		//printf("1: %f, %f, %f\n", cart_positions[1].x, cart_positions[1].y, cart_positions[1].z);
+		//printf("2: %f, %f, %f\n", cart_positions[2].x, cart_positions[2].y, cart_positions[2].z);
+		//printf("\n\n");
 
-		};
-
-		static int train1 = 1;
-		static int train1_step = 0;
-		static int train2 = 0;
-		static int train2_step = 0;
-		cart_positions[0] = cart_tracer;
-		cart_positions[1] = tracePath(&train1, &train1_step, step_rate);
-		cart_positions[2] = tracePath(&train2, &train2_step, step_rate);
-
-		printf("0: %f, %f, %f\n", cart_positions[0].x, cart_positions[0].y, cart_positions[0].z);
-		printf("1: %f, %f, %f\n", cart_positions[1].x, cart_positions[1].y, cart_positions[1].z);
-		printf("2: %f, %f, %f\n", cart_positions[2].x, cart_positions[2].y, cart_positions[2].z);
-		printf("\n\n");
-
-		glm::mat4 transCart = glm::translate(glm::mat4(1.0f), cart_positions[0]);
-		moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3.5, 0));
-		S = glm::scale(glm::mat4(1), glm::vec3(.4, .4, .4));
-		M = transCart * moveUp * S;
-		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glDrawArrays(GL_TRIANGLES, 0, posSize);
-		
-		transCart = glm::translate(glm::mat4(1.0f), cart_positions[1]);
-		M = transCart * moveUp * S;
-		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glDrawArrays(GL_TRIANGLES, 0, posSize);
-		
-		transCart = glm::translate(glm::mat4(1.0f), cart_positions[2]);
-		M = transCart * moveUp * S;
-		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glDrawArrays(GL_TRIANGLES, 0, posSize);
+		//glm::mat4 transCart = glm::translate(glm::mat4(1.0f), cart_positions[0]);
+		//moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3.5, 0));
+		//S = glm::scale(glm::mat4(1), glm::vec3(.4, .4, .4));
+		//M = transCart * moveUp * S;
+		//glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		//glDrawArrays(GL_TRIANGLES, 0, posSize);
+		//
+		//transCart = glm::translate(glm::mat4(1.0f), cart_positions[1]);
+		//M = transCart * moveUp * S;
+		//glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		//glDrawArrays(GL_TRIANGLES, 0, posSize);
+		//
+		//transCart = glm::translate(glm::mat4(1.0f), cart_positions[2]);
+		//M = transCart * moveUp * S;
+		//glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		//glDrawArrays(GL_TRIANGLES, 0, posSize);
 
 		trackProg->unbind();
 		heightshader->bind();
