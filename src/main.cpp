@@ -288,7 +288,23 @@ public:
 
 		printf("pos size: %i\n", pos.size());
 		printf("n size: %i\n", n.size());
+
+		// Set up instance rendering
+		//glm::mat4 moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3, 0));
+		//glm::mat4 scaleRail = glm::scale(glm::mat4(1.0f), glm::vec3(.75, .2, 1));
+		//
+		//for (int i = 0; i < positions.size(); i++) {
+		//	glm::mat4 transRail = glm::translate(glm::mat4(1.0f), glm::vec3(positions[i].x, heightmap[i], positions[i].y));
+		//	glm::mat4 rotateRail = glm::rotate(glm::mat4(1.0f), rotations[i], glm::vec3(0.0, 1.0, 0.0));
+		//	glm::mat4 slopeRail = glm::rotate(glm::mat4(1.0f), slopes[i], dirs[i]);
+		//	glm::mat4 M = moveUp * transRail * slopeRail * rotateRail * scaleRail;
+		//	glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		//	glUniform3f(trackProg->getUniform("color_change"), (1.f / positions.size()) * i + .25, (1.f / positions.size()) * i + .1, (1.f / positions.size()) * i + .1);
+		//	glDrawArrays(GL_TRIANGLES, 0, posSize);
+		//}
+
 		glBindVertexArray(0);
+
 
 		//initialize the net mesh
 		init_mesh();
@@ -924,12 +940,6 @@ int main(int argc, char **argv) {
 	windowManager->setEventCallbacks(application);
 	application->windowManager = windowManager;
 
-	/* This is the code that will likely change program to program as you
-		may need to initialize or set up different data and state */
-	// Initialize scene.
-	application->init(resourceDir);
-	application->initGeom();
-
 	srand(time(0));
 	//srand(56534532);
 
@@ -943,6 +953,12 @@ int main(int argc, char **argv) {
 	application->vectorizeDirections();
 
 	application->vectorLengths();
+
+	// Initialize scene.
+	application->init(resourceDir);
+	application->initGeom();
+
+	
 
 	// Loop until the user closes the window.
 	while(! glfwWindowShouldClose(windowManager->getHandle())) {
