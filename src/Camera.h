@@ -17,7 +17,9 @@ class Camera {
 
 public:
 	glm::vec3 pos = glm::vec3(0,0,0);
+	glm::vec3 bird_pos = glm::vec3(0,0,0);
 	glm::vec3 rot = glm::vec3(0,0,0);
+	glm::vec3 bird_rot = glm::vec3(0,0,0);
 
 	int w = 0;
 	int a = 0;
@@ -29,8 +31,7 @@ public:
 	
 	Camera();
 		
-	glm::mat4 process(double ftime, std::vector<glm::vec3> positions, std::vector<float> rotations, std::vector<int> directions,
-		std::vector<double> heightmap, std::vector<float> slopes, std::vector<glm::vec3> dirs);
+	glm::mat4 process(double ftime, glm::vec3 position);
 };
 
 #endif

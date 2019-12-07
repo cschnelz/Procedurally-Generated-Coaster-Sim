@@ -28,8 +28,6 @@ public:
 	void draw(const std::shared_ptr<Program> prog, bool use_extern_texures) const;
 	unsigned int *textureIDs = NULL;
 
-
-private:
 	int obj_count = 0;
 	std::vector<unsigned int> *eleBuf = NULL;
 	std::vector<float> *posBuf = NULL;
