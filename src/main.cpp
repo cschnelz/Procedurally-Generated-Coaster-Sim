@@ -62,6 +62,7 @@ public:
 	// cylinder dimensions
 	int CIRC_SAMP_RATE = 80;
 	int cylinderLength = 4;
+	int posSize;
 
 	void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) { glfwSetWindowShouldClose(window, GL_TRUE); }
@@ -150,7 +151,15 @@ public:
 
 
 	/*Note that any gl calls must always happen after a GL state is initialized */
-	void initGeom() {
+	void initGeom() {		
+		// CUBE
+
+		shape = make_shared<Shape>();
+		//shape->loadMesh(resourceDirectory + "/t800.obj");
+		//shape->loadMesh(resourceDirectory + "/Alduin.obj");
+		shape->loadMesh("../resources/rectangle.obj");
+		shape->resize();
+		shape->init();
 		//generate the VAO
 		glGenVertexArrays(1, &CubeArrayID);
 		glBindVertexArray(CubeArrayID);
@@ -160,95 +169,125 @@ public:
 		//set the current state to focus on our vertex buffer
 		glBindBuffer(GL_ARRAY_BUFFER, CubeBufferID);
 
-		GLfloat cube_vertices2[] = {
-			// front
-			-1.0, -1.0,  1.0,
-			1.0, -1.0,  1.0,
-			1.0,  1.0,  1.0,
-			-1.0,  1.0,  1.0,
-			// back
-			-1.0, -1.0, -1.0,
-			1.0, -1.0, -1.0,
-			1.0,  1.0, -1.0,
-			-1.0,  1.0, -1.0,
-			//tube 8 - 11
-			-1.0, -1.0,  1.0,
-			1.0, -1.0,  1.0,
-			1.0,  1.0,  1.0,
-			-1.0,  1.0,  1.0,
-			//12 - 15
-			-1.0, -1.0, -1.0,
-			1.0, -1.0, -1.0,
-			1.0,  1.0, -1.0,
-			-1.0,  1.0, -1.0
+		std::vector<glm::vec3> pos;
+		// top
+		pos.push_back(glm::vec3(-1, 1, -1));
+		pos.push_back(glm::vec3(1, 1, -1));
+		pos.push_back(glm::vec3(1, 1, 1));
 
+		pos.push_back(glm::vec3(-1, 1, -1));
+		pos.push_back(glm::vec3(1, 1, 1));
+		pos.push_back(glm::vec3(-1, 1, 1));
 
-		};
+		// bottom
+		pos.push_back(glm::vec3(-1, -1, -1));
+		pos.push_back(glm::vec3(1, -1, -1));
+		pos.push_back(glm::vec3(1, -1, 1));
 
-		// scale down
-		for (int i = 0; i < 48; i++) {
-			cube_vertices2[i] = cube_vertices2[i] * .8;
-		}
+		pos.push_back(glm::vec3(-1, -1, -1));
+		pos.push_back(glm::vec3(1, -1, 1));
+		pos.push_back(glm::vec3(-1, -1, 1));
+
+		// front
+		pos.push_back(glm::vec3(-1, 1, 1));
+		pos.push_back(glm::vec3(1, 1, 1));
+		pos.push_back(glm::vec3(1, -1, 1));
+
+		pos.push_back(glm::vec3(-1, 1, 1));
+		pos.push_back(glm::vec3(1, -1, 1));
+		pos.push_back(glm::vec3(-1, -1, 1));
+		
+		// back
+		pos.push_back(glm::vec3(-1, 1, -1));
+		pos.push_back(glm::vec3(1, 1, -1));
+		pos.push_back(glm::vec3(1, -1, -1));
+
+		pos.push_back(glm::vec3(-1, 1, -1));
+		pos.push_back(glm::vec3(1, -1, -1));
+		pos.push_back(glm::vec3(-1, -1, -1));
+
+		// left
+		pos.push_back(glm::vec3(-1, 1, -1));
+		pos.push_back(glm::vec3(-1, 1, 1));
+		pos.push_back(glm::vec3(-1, -1, 1));
+
+		pos.push_back(glm::vec3(-1, 1, -1));
+		pos.push_back(glm::vec3(-1, -1, 1));
+		pos.push_back(glm::vec3(-1, -1, -1));
+
+		// right
+		pos.push_back(glm::vec3(1, 1, -1));
+		pos.push_back(glm::vec3(1, 1, 1));
+		pos.push_back(glm::vec3(1, -1, 1));
+
+		pos.push_back(glm::vec3(1, 1, -1));
+		pos.push_back(glm::vec3(1, -1, 1));
+		pos.push_back(glm::vec3(1, -1, -1));
+
+		posSize = pos.size();
 		//actually memcopy the data - only do this once
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices2), cube_vertices2, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, pos.size() * sizeof(glm::vec3), pos.data(), GL_DYNAMIC_DRAW);
 
 		//we need to set up the vertex array
 		glEnableVertexAttribArray(0);
 		//key function to get up how many elements to pull out at a time (3)
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-		glGenBuffers(1, &CubeIndexID);
-		//set the current state to focus on our vertex buffer
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CubeIndexID);
-		GLushort cube_elements2[] = {
-
-			// front
-			0, 1, 2,
-			2, 3, 0,
-			// back
-			7, 6, 5,
-			5, 4, 7,
-			//tube 8-11, 12-15
-			8,12,13,
-			8,13,9,
-			9,13,14,
-			9,14,10,
-			10,14,15,
-			10,15,11,
-			11,15,12,
-			11,12,8
-
-		};
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_elements2), cube_elements2, GL_STATIC_DRAW);
-
 		glGenBuffers(1, &CubeNorID);
 		//set the current state to focus on our vertex buffer
 		glBindBuffer(GL_ARRAY_BUFFER, CubeNorID);
 
-		//normals
-		GLfloat cube_nor[] = {
-			0,0,1,
-			0,0,1,
-			0,0,1,
-			0,0,1,
-			0,0,-1,
-			0,0,-1,
-			0,0,-1,
-			0,0,-1,
-			0,1,0,
-			0,1,0,
-			1,0,0,
-			1,0,0,
-			0,-1,0,
-			0,-1,0,
-			-1,0,0,
-			-1,0,0
-		};
-		
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_nor), cube_nor, GL_DYNAMIC_DRAW);
+		std::vector<glm::vec3> n;
+		// top
+		n.push_back(glm::vec3(0, 1, 0));
+		n.push_back(glm::vec3(0, 1, 0));
+		n.push_back(glm::vec3(0, 1, 0));
+		n.push_back(glm::vec3(0, 1, 0));
+		n.push_back(glm::vec3(0, 1, 0));
+		n.push_back(glm::vec3(0, 1, 0));
+		// bottom
+		n.push_back(glm::vec3(0, -1, 0));
+		n.push_back(glm::vec3(0, -1, 0));
+		n.push_back(glm::vec3(0, -1, 0));
+		n.push_back(glm::vec3(0, -1, 0));
+		n.push_back(glm::vec3(0, -1, 0));
+		n.push_back(glm::vec3(0, -1, 0));
+		//front
+		n.push_back(glm::vec3(0, 0, 1));
+		n.push_back(glm::vec3(0, 0, 1));
+		n.push_back(glm::vec3(0, 0, 1));
+		n.push_back(glm::vec3(0, 0, 1));
+		n.push_back(glm::vec3(0, 0, 1));
+		n.push_back(glm::vec3(0, 0, 1));
+		// back
+		n.push_back(glm::vec3(0, 0, -1));
+		n.push_back(glm::vec3(0, 0, -1));
+		n.push_back(glm::vec3(0, 0, -1));
+		n.push_back(glm::vec3(0, 0, -1));
+		n.push_back(glm::vec3(0, 0, -1));
+		n.push_back(glm::vec3(0, 0, -1));
+		// left
+		n.push_back(glm::vec3(-1, 0, 0));
+		n.push_back(glm::vec3(-1, 0, 0));
+		n.push_back(glm::vec3(-1, 0, 0));
+		n.push_back(glm::vec3(-1, 0, 0));
+		n.push_back(glm::vec3(-1, 0, 0));
+		n.push_back(glm::vec3(-1, 0, 0));
+		// right
+		n.push_back(glm::vec3(1, 0, 0));
+		n.push_back(glm::vec3(1, 0, 0));
+		n.push_back(glm::vec3(1, 0, 0));
+		n.push_back(glm::vec3(1, 0, 0));
+		n.push_back(glm::vec3(1, 0, 0));
+		n.push_back(glm::vec3(1, 0, 0));
+
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*n.size(), n.data(), GL_STATIC_DRAW);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+		printf("pos size: %i\n", pos.size());
+		printf("n size: %i\n", n.size());
 		glBindVertexArray(0);
 
 		//initialize the net mesh
@@ -358,8 +397,10 @@ public:
 		trackProg->addUniform("V");
 		trackProg->addUniform("M");
 		trackProg->addUniform("color_change");
+		trackProg->addUniform("light_pos");
+		trackProg->addUniform("campos");
 		trackProg->addAttribute("vertPos");
-		trackProg->addAttribute("vertNorTrack");
+		trackProg->addAttribute("vertNor");		
 
 		// Initialize the GLSL program.
 		heightshader = std::make_shared<Program>();
@@ -403,7 +444,7 @@ public:
 				temp.y += (end_coords.y > starting_coords.y) ? -1 : 1;
 				positions.push_back(temp);
 				rotations.push_back(quarter * starting_dir);
-				directions.push_back( (end_coords.y > starting_coords.y) ? 0 : 2);
+				directions.push_back( (end_coords.y > starting_coords.y) ? 2 : 0);
 			}
 			if (abs(end_coords.x - starting_coords.x) > 1) {
 				positions.erase(positions.end() - 1);
@@ -415,7 +456,7 @@ public:
 				temp.x += (end_coords.x > starting_coords.x) ? -1 : 1;
 				positions.push_back(temp);
 				rotations.push_back(quarter * ((starting_dir + 1) % 4));
-				directions.push_back((end_coords.x > starting_coords.x) ? 1 : 3);
+				directions.push_back((end_coords.x > starting_coords.x) ? 3 : 1);
 			}
 		}
 		else {
@@ -429,7 +470,7 @@ public:
 				temp.x += (end_coords.x > starting_coords.x) ? -1 : 1;
 				positions.push_back(temp);
 				rotations.push_back(quarter * starting_dir);
-				directions.push_back((end_coords.x > starting_coords.x) ? 1 : 3);
+				directions.push_back((end_coords.x > starting_coords.x) ? 3 : 1);
 			}
 			if (abs(end_coords.y - starting_coords.y) > 1) {
 				positions.erase(positions.end() - 1);
@@ -440,12 +481,13 @@ public:
 				temp.y += (end_coords.y > starting_coords.y) ? -1 : 1;
 				positions.push_back(temp);
 				rotations.push_back(quarter * ((starting_dir + 1) % 4));
-				directions.push_back((end_coords.y > starting_coords.y) ? 0 : 2);
+				directions.push_back((end_coords.y > starting_coords.y) ? 2 : 0);
 			}
 		}
 	}
 
 	void autocomplete_parallel(int starting_dir, int current_dir, vec3 end_coords, vec3 starting_coords) {
+		printf("PARRALEL\n");
 		vec3 intermediate = vec3(0);
 		int padding_dir = 0;
 		vec3 temp = vec3(0);
@@ -705,7 +747,7 @@ public:
 		printf("height: %i\n", heightmap.size());
 	}
 
-	glm::mat4 tracePath(int steps_per_position) {
+	glm::vec3 tracePath(int steps_per_position) {
 		// index along the overall position vector
 		static int position_location = 0;
 		// stepper for making smaller steps between each index in the position vector
@@ -734,12 +776,7 @@ public:
 			step_location = next_pos;
 			height_loc = next_height;
 		}
-
-		//return glm::translate(glm::mat4(1.0f), glm::vec3(
-		//	positions[(int)(glfwGetTime() * 5) % (positions.size() - 1)].x,
-		//	heightmap[(int)(glfwGetTime() * 5) % (positions.size() - 1)] + 3.5, 
-		//	positions[(int)(glfwGetTime() * 5) % (positions.size() - 1)].y));
-		return glm::translate(glm::mat4(1.0f), glm::vec3(step_location.x, height_loc, step_location.y));
+		return glm::vec3(step_location.x, height_loc, step_location.y);
 	}
 
 
@@ -748,7 +785,7 @@ public:
 	will actually issue the commands to draw any geometry you have set up to
 	draw
 	********/
-	void render() {
+	void render() {		
 		double frametime = get_last_elapsed_time();
 
 		// Get current frame buffer size.
@@ -785,9 +822,27 @@ public:
 		glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(0.8f, 0.8f, 0.8f));
 
 		M =  TransZ * S;
-		V = mycam.process(frametime, positions, rotations, directions, heightmap, slopes, dirs);
+		glm::vec3 cam_tracer = tracePath(10);
+		glm::vec3 cart_tracer = glm::vec3(cam_tracer.x, cam_tracer.y,cam_tracer.z);
+		cam_tracer.y += 5.5;
+		V = mycam.process(frametime, -cam_tracer);
 		
+		glEnable(GL_DEPTH_TEST);
+
 		trackProg->bind();
+		glUniformMatrix4fv(trackProg->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+		glUniformMatrix4fv(trackProg->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+
+		glUniform3fv(trackProg->getUniform("campos"),1 ,&mycam.pos[0]);
+
+
+		static float light;
+		light += .005;
+		static glm::vec4 light_pos = glm::vec4(50, 30, 0, 0);
+		glm::mat4 rotate_light = glm::rotate(glm::mat4(1.0f), light, glm::vec3(0, 1, 0));
+		glm::vec4 new_light = light_pos * rotate_light;
+		glUniform3f(trackProg->getUniform("light_pos"), new_light.x, new_light.y, new_light.z);
+		
 		glBindVertexArray(CubeArrayID);
 
 		glUniformMatrix4fv(trackProg->getUniform("P"), 1, GL_FALSE, &P[0][0]);
@@ -803,53 +858,54 @@ public:
 			glm::mat4 slopeRail = glm::rotate(glm::mat4(1.0f), slopes[i], dirs[i]);
 			M = moveUp * transRail * slopeRail * rotateRail* scaleRail;
 			glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-			glUniform1f(trackProg->getUniform("color_change"), (1.f / positions.size()) * i);
-			glDrawElements(GL_TRIANGLES,36, GL_UNSIGNED_SHORT, (void*)0);
+			glUniform3f(trackProg->getUniform("color_change"), (1.f / positions.size()) * i + .25, (1.f / positions.size()) * i +.1, (1.f / positions.size())* i + .1);
+			glDrawArrays(GL_TRIANGLES, 0, posSize);
 		}
 
 		// draw the cart in positions of coaster moving with time
-		glm::mat4 transCart = tracePath(10);
+		glUniform3f(trackProg->getUniform("color_change"), .8f, .4f, .3f); // cart color
+		static glm::vec3 cart_positions[] = {
+			glm::vec3(0,0,0),
+			glm::vec3(0,0,0),
+			glm::vec3(0,0,0)
+		};
+
+		cart_positions[2] = cart_positions[1];
+		cart_positions[1] = cart_positions[0];
+		cart_positions[0] = cart_tracer;
+
+		glm::mat4 transCart = glm::translate(glm::mat4(1.0f), cart_positions[0]);
 		moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3.5, 0));
-		M = transCart * moveUp;
-		glUniform1f(trackProg->getUniform("color_change"), 1.);
+		S = glm::scale(glm::mat4(1), glm::vec3(.4, .4, .4));
+		M = transCart * moveUp * S;
 		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, (void*)0);
+		glDrawArrays(GL_TRIANGLES, 0, posSize);
 
 		trackProg->unbind();
-		//prog->bind();
+		heightshader->bind();
 
-		//glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
-		//glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		//glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		//glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_2D, Texture);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, -3.0f, -50));
+		M = TransY;
+		glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+		glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+		
+		vec3 offset = mycam.pos;
+		offset.y = 0;
+		offset.x = (int)offset.x;
+		offset.z = (int)offset.z;
+		glUniform3fv(heightshader->getUniform("camoff"), 1, &offset[0]);
+		glUniform3fv(heightshader->getUniform("campos"), 1, &mycam.pos[0]);
+		glBindVertexArray(VertexArrayID);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferIDBox);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, HeightTex);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, Texture);
+		glDrawElements(GL_TRIANGLES, MESHSIZE*MESHSIZE*6, GL_UNSIGNED_SHORT, (void*)0);
 
-		//prog->unbind();
-
-		//heightshader->bind();
-
-		////glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		//glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, -3.0f, -50));
-		//M = TransY;
-		//glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		//glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		//glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		//
-		//vec3 offset = mycam.pos;
-		//offset.y = 0;
-		//offset.x = (int)offset.x;
-		//offset.z = (int)offset.z;
-		//glUniform3fv(heightshader->getUniform("camoff"), 1, &offset[0]);
-		//glUniform3fv(heightshader->getUniform("campos"), 1, &mycam.pos[0]);
-		//glBindVertexArray(VertexArrayID);
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferIDBox);
-		//glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_2D, HeightTex);
-		//glActiveTexture(GL_TEXTURE1);
-		//glBindTexture(GL_TEXTURE_2D, Texture);
-		//glDrawElements(GL_TRIANGLES, MESHSIZE*MESHSIZE*6, GL_UNSIGNED_SHORT, (void*)0);
-
-		//heightshader->unbind();
+		heightshader->unbind();
 	}
 };
 //******************************************************************************************
