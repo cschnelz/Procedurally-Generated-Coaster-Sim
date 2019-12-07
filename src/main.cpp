@@ -508,7 +508,6 @@ public:
 	}
 
 	void autocomplete_parallel(int starting_dir, int current_dir, vec3 end_coords, vec3 starting_coords) {
-		printf("PARRALEL\n");
 		vec3 intermediate = vec3(0);
 		int padding_dir = 0;
 		vec3 temp = vec3(0);
@@ -702,8 +701,6 @@ public:
 		positions.erase(positions.begin());
 		rotations.erase(rotations.begin());
 		directions.erase(directions.begin());
-
-		printf("diff in vectors: %i\n", positions.size() - directions.size());
 	}
 
 	std::vector<double> heightmap;
@@ -743,8 +740,6 @@ public:
 		curr_height = heightmap[heightmap.size() - 1];
 		next_height = heightmap[0];
 		slopes.push_back(glm::atan(next_height - curr_height));
-
-		printf("diff in vecs 2: %i\n", positions.size() - slopes.size());
 	}
 
 	void vectorizeDirections() {
@@ -972,7 +967,7 @@ int main(int argc, char **argv) {
 	application->initGeom();
 
 	srand(time(0));
-	//srand(56534532);
+	srand(56534532);
 	//srand(98787815);
 
 	// track length, straight rate, straight deterioration, border size, min_segment_length
