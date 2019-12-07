@@ -52,9 +52,6 @@ public:
 	GLuint CubeArrayID;
 	GLuint CubeBufferID, CubeNorID, CubeIndexID;
 
-	// cylinder
-	GLuint CylinderArrayID;
-	GLuint CylinderBufferID, CylinderColorID, CylinderIndexID;
 	// Data necessary to give our box to OpenGL
 	GLuint MeshPosID, MeshTexID, IndexBufferIDBox;
 
@@ -151,12 +148,9 @@ public:
 		glBindVertexArray(0);
 	}
 
-	// PRESS G TO GO BIRDS EYE VIEW
 
 	/*Note that any gl calls must always happen after a GL state is initialized */
-	void initGeom() {		
-		// CUBE
-
+	void initGeom() {
 		//generate the VAO
 		glGenVertexArrays(1, &CubeArrayID);
 		glBindVertexArray(CubeArrayID);
@@ -203,35 +197,6 @@ public:
 		//key function to get up how many elements to pull out at a time (3)
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-		//color
-		GLfloat cube_nor[] = {
-			// front colors
-			1.0, 0.0, 0.5,
-			1.0, 0.0, 0.5,
-			1.0, 0.0, 0.5,
-			1.0, 0.0, 0.5,
-			// back colors
-			0.5, 0.5, 0.0,
-			0.5, 0.5, 0.0,
-			0.5, 0.5, 0.0,
-			0.5, 0.5, 0.0,
-			// tube colors
-			0.0, 1.0, 1.0,
-			0.0, 1.0, 1.0,
-			0.0, 1.0, 1.0,
-			0.0, 1.0, 1.0,
-			0.0, 1.0, 1.0,
-			0.0, 1.0, 1.0,
-			0.0, 1.0, 1.0,
-			0.0, 1.0, 1.0,
-		};
-		glGenBuffers(1, &CubeNorID);
-		//set the current state to focus on our vertex buffer
-		glBindBuffer(GL_ARRAY_BUFFER, CubeNorID);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_nor), cube_nor, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
 		glGenBuffers(1, &CubeIndexID);
 		//set the current state to focus on our vertex buffer
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CubeIndexID);
@@ -255,6 +220,34 @@ public:
 
 		};
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_elements2), cube_elements2, GL_STATIC_DRAW);
+
+		glGenBuffers(1, &CubeNorID);
+		//set the current state to focus on our vertex buffer
+		glBindBuffer(GL_ARRAY_BUFFER, CubeNorID);
+
+		//normals
+		GLfloat cube_nor[] = {
+			0,0,1,
+			0,0,1,
+			0,0,1,
+			0,0,1,
+			0,0,-1,
+			0,0,-1,
+			0,0,-1,
+			0,0,-1,
+			0,1,0,
+			0,1,0,
+			1,0,0,
+			1,0,0,
+			0,-1,0,
+			0,-1,0,
+			-1,0,0,
+			-1,0,0
+		};
+		
+		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_nor), cube_nor, GL_DYNAMIC_DRAW);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 		glBindVertexArray(0);
 
@@ -309,15 +302,15 @@ public:
 
 		//[TWOTEXTURES]
 		//set the 2 textures to the correct samplers in the fragment shader:
-		GLuint Tex1Location = glGetUniformLocation(prog->pid, "tex");//tex, tex2... sampler in the fragment shader
-		GLuint Tex2Location = glGetUniformLocation(prog->pid, "tex2");
-		// Then bind the uniform samplers to texture units:
-		glUseProgram(prog->pid);
-		glUniform1i(Tex1Location, 0);
-		glUniform1i(Tex2Location, 1);
+		//GLuint Tex1Location = glGetUniformLocation(prog->pid, "tex");//tex, tex2... sampler in the fragment shader
+		//GLuint Tex2Location = glGetUniformLocation(prog->pid, "tex2");
+		//// Then bind the uniform samplers to texture units:
+		//glUseProgram(prog->pid);
+		//glUniform1i(Tex1Location, 0);
+		//glUniform1i(Tex2Location, 1);
 
-		Tex1Location = glGetUniformLocation(heightshader->pid, "tex");//tex, tex2... sampler in the fragment shader
-		Tex2Location = glGetUniformLocation(heightshader->pid, "tex2");
+		GLuint Tex1Location = glGetUniformLocation(heightshader->pid, "tex");//tex, tex2... sampler in the fragment shader
+		GLuint Tex2Location = glGetUniformLocation(heightshader->pid, "tex2");
 		// Then bind the uniform samplers to texture units:
 		glUseProgram(heightshader->pid);
 		glUniform1i(Tex1Location, 0);
@@ -338,21 +331,21 @@ public:
 		glEnable(GL_DEPTH_TEST);
 
 		// Initialize the GLSL program.
-		prog = std::make_shared<Program>();
-		prog->setVerbose(true);
-		prog->setShaderNames(resourceDirectory + "/shader_vertex.glsl", resourceDirectory + "/shader_fragment.glsl");
-		if (!prog->init()) {
-			std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
-			exit(1);
-		}
-		prog->addUniform("P");
-		prog->addUniform("V");
-		prog->addUniform("M");
-		prog->addUniform("campos");
-		prog->addUniform("color_change");
-		prog->addAttribute("vertPos");
-		prog->addAttribute("vertNor");
-		prog->addAttribute("vertTex");
+		//prog = std::make_shared<Program>();
+		//prog->setVerbose(true);
+		//prog->setShaderNames(resourceDirectory + "/shader_vertex.glsl", resourceDirectory + "/shader_fragment.glsl");
+		//if (!prog->init()) {
+		//	std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+		//	exit(1);
+		//}
+		//prog->addUniform("P");
+		//prog->addUniform("V");
+		//prog->addUniform("M");
+		//prog->addUniform("campos");
+		//prog->addUniform("color_change");
+		//prog->addAttribute("vertPos");
+		//prog->addAttribute("vertNor");
+		//prog->addAttribute("vertTex");
 
 		trackProg = std::make_shared<Program>();
 		trackProg->setVerbose(true);
@@ -366,6 +359,7 @@ public:
 		trackProg->addUniform("M");
 		trackProg->addUniform("color_change");
 		trackProg->addAttribute("vertPos");
+		trackProg->addAttribute("vertNorTrack");
 
 		// Initialize the GLSL program.
 		heightshader = std::make_shared<Program>();
@@ -794,10 +788,10 @@ public:
 		V = mycam.process(frametime, positions, rotations, directions, heightmap, slopes, dirs);
 		
 		trackProg->bind();
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		
 		glBindVertexArray(CubeArrayID);
+
+		glUniformMatrix4fv(trackProg->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+		glUniformMatrix4fv(trackProg->getUniform("V"), 1, GL_FALSE, &V[0][0]);
 
 		glm::mat4 moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3, 0));
 		glm::mat4 scaleRail = glm::scale(glm::mat4(1.0f), glm::vec3(.75, .2, 1));
@@ -808,54 +802,54 @@ public:
 			glm::mat4 rotateRail = glm::rotate(glm::mat4(1.0f), rotations[i], glm::vec3(0.0, 1.0, 0.0));
 			glm::mat4 slopeRail = glm::rotate(glm::mat4(1.0f), slopes[i], dirs[i]);
 			M = moveUp * transRail * slopeRail * rotateRail* scaleRail;
-			glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-			glUniform1f(prog->getUniform("color_change"), (1.f / positions.size()) * i);
-			glDrawElements(GL_TRIANGLES, CIRC_SAMP_RATE * cylinderLength * 3, GL_UNSIGNED_SHORT, (void*)0);
+			glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+			glUniform1f(trackProg->getUniform("color_change"), (1.f / positions.size()) * i);
+			glDrawElements(GL_TRIANGLES,36, GL_UNSIGNED_SHORT, (void*)0);
 		}
-		// lets draw a coaster train shall we
-		glBindVertexArray(CubeArrayID);
 
 		// draw the cart in positions of coaster moving with time
 		glm::mat4 transCart = tracePath(10);
 		moveUp = glm::translate(glm::mat4(1.0f), glm::vec3(0, 3.5, 0));
 		M = transCart * moveUp;
-		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		glUniform1f(trackProg->getUniform("color_change"), 1.);
+		glUniformMatrix4fv(trackProg->getUniform("M"), 1, GL_FALSE, &M[0][0]);
 		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, (void*)0);
 
 		trackProg->unbind();
-		prog->bind();
+		//prog->bind();
 
-		glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
-		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, Texture);
+		//glUniform3fv(prog->getUniform("campos"), 1, &mycam.pos[0]);
+		//glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+		//glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, Texture);
 
-		prog->unbind();
-		heightshader->bind();
+		//prog->unbind();
 
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, -3.0f, -50));
-		M = TransY;
-		glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
-		glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
-		glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
-		
-		vec3 offset = mycam.pos;
-		offset.y = 0;
-		offset.x = (int)offset.x;
-		offset.z = (int)offset.z;
-		glUniform3fv(heightshader->getUniform("camoff"), 1, &offset[0]);
-		glUniform3fv(heightshader->getUniform("campos"), 1, &mycam.pos[0]);
-		glBindVertexArray(VertexArrayID);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferIDBox);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, HeightTex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, Texture);
-		glDrawElements(GL_TRIANGLES, MESHSIZE*MESHSIZE*6, GL_UNSIGNED_SHORT, (void*)0);
+		//heightshader->bind();
 
-		heightshader->unbind();
+		////glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		//glm::mat4 TransY = glm::translate(glm::mat4(1.0f), glm::vec3(-50.0f, -3.0f, -50));
+		//M = TransY;
+		//glUniformMatrix4fv(heightshader->getUniform("M"), 1, GL_FALSE, &M[0][0]);
+		//glUniformMatrix4fv(heightshader->getUniform("P"), 1, GL_FALSE, &P[0][0]);
+		//glUniformMatrix4fv(heightshader->getUniform("V"), 1, GL_FALSE, &V[0][0]);
+		//
+		//vec3 offset = mycam.pos;
+		//offset.y = 0;
+		//offset.x = (int)offset.x;
+		//offset.z = (int)offset.z;
+		//glUniform3fv(heightshader->getUniform("camoff"), 1, &offset[0]);
+		//glUniform3fv(heightshader->getUniform("campos"), 1, &mycam.pos[0]);
+		//glBindVertexArray(VertexArrayID);
+		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferIDBox);
+		//glActiveTexture(GL_TEXTURE0);
+		//glBindTexture(GL_TEXTURE_2D, HeightTex);
+		//glActiveTexture(GL_TEXTURE1);
+		//glBindTexture(GL_TEXTURE_2D, Texture);
+		//glDrawElements(GL_TRIANGLES, MESHSIZE*MESHSIZE*6, GL_UNSIGNED_SHORT, (void*)0);
+
+		//heightshader->unbind();
 	}
 };
 //******************************************************************************************

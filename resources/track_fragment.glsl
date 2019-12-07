@@ -1,9 +1,9 @@
 #version 330 core
-out vec4 color;
-in vec3 vertex_normal;
+out vec3 color;
+//in vec3 vertex_normal;
 in vec3 vertex_pos;
 //in vec2 vertex_tex;
-//uniform vec3 campos;
+uniform vec3 campos;
 
 uniform float color_change;
 //uniform sampler2D tex;
@@ -15,21 +15,18 @@ void main()
 //vec3 lp=vec3(10,-20,-100);
 //vec3 ld = normalize(vertex_pos - lp);
 //float diffuse = dot(n,ld);
+//
+////color.rgb = texture(tex, vertex_tex).rgb;
+//
+//color = vec3(color_change) * diffuse;
 
-//color.rgb = texture(tex, vertex_tex).rgb;
-
-color.rgb = vec3(color_change);
-color.a = 1.f;
-
-//color.rgb *= diffuse*0.7;
+color = vec3(1,0,1);
 
 //vec3 cd = normalize(vertex_pos - campos);
 //vec3 h = normalize(cd+ld);
 //float spec = dot(n,h);
 //spec = clamp(spec,0,1);
 //spec = pow(spec,20);
-//color.rgb += vec3(1,1,1)*spec*3;
-//color.a=1;
-//
+//color += vec3(1,1,1)*spec*3;
 
 }
