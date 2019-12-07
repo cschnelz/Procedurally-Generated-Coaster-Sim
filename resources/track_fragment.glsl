@@ -2,7 +2,7 @@
 out vec4 color;
 in vec3 vertex_normal;
 in vec3 vertex_pos;
-//in vec2 vertex_tex;
+in vec2 vertex_tex;
 //uniform vec3 campos;
 
 uniform float color_change;
@@ -18,7 +18,7 @@ void main()
 
 //color.rgb = texture(tex, vertex_tex).rgb;
 
-color.rgb = vec3(color_change);
+color.rgb = vertex_normal;
 color.a = 1.f;
 
 //color.rgb *= diffuse*0.7;
