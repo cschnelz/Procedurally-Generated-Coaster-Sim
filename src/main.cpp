@@ -327,7 +327,13 @@ public:
 		glBufferData(GL_ARRAY_BUFFER, models.size() * sizeof(glm::mat4), models.data(), GL_DYNAMIC_DRAW);
 		int mat_loc = glGetAttribLocation(trackProg->pid, "InstanceMat");
 		for (int i = 0; i < models.size(); i++) {
-			// do instance stuff
+			GLsizei vec4size = sizeof(glm::vec4);
+			// vertex attribs for a matrix -- need for
+			glEnableVertexAttribArray(3 + (i * 4));
+			glEnableVertexAttribArray(4 + (i * 4));
+			glEnableVertexAttribArray(5);
+			glEnableVertexAttribArray(6);
+			
 		}
 
 		glBindVertexArray(0);
